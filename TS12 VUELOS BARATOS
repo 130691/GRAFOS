@@ -1,0 +1,78 @@
+using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        Grafo vuelos = new Grafo();
+        vuelos.AgregarVuelo("Mariscal Sucre", "Argentina", 500);
+        vuelos.AgregarVuelo("Mariscal Sucre", "Peru", 400);
+        vuelos.AgregarVuelo("Mariscal Sucre", "Colombia", 300);
+        vuelos.AgregarVuelo("Mariscal Sucre", "Chile", 600);
+        vuelos.AgregarVuelo("Mariscal Sucre", "B", 100);
+        vuelos.AgregarVuelo("B", "C", 150);
+        vuelos.AgregarVuelo("Mariscal Sucre", "C", 200);
+        vuelos.AgregarVuelo("C", "D", 250);
+        vuelos.AgregarVuelo("Mariscal Sucre", "D", 300);
+
+        var distancias = vuelos.Dijkstra("Mariscal Sucre");
+        foreach (var destino in distancias)
+        {
+            Console.WriteLine($"El costo más barato para ir de Mariscal Sucre a {destino.Key} es {destino.Value}");
+        }
+    }
+}
+
+class Grafo
+{
+    private Dictionary<string, Dictionary<string, int>> adjacencias = new Dictionary<string, Dictionary<string, int>>();
+
+    public void AgregarVuelo(string origen, string destino, int costo)
+    {
+        if (!adjacencias.ContainsKey(origen))
+            adjacencias[origen] = new Dictionary<string, int>();
+        if (!adjacencias.ContainsKey(destino))
+            adjacencias[destino] = new Dictionary<string, int>();
+
+        adjacencias[origen][destino] = costo;
+        adjacencias[destino][origen] = costo; // Suponiendo que los vuelos son bidireccionales
+    }
+
+    public Dictionary<string, int> Dijkstra(string origen)
+    {
+        var distancias = new Dictionary<string, int>();
+        var visitados = new HashSet<string>();
+        var colaPrioridad = new SortedSet<Tuple<int, string>>();
+
+        foreach (var nodo in adjacencias)
+        {
+            distancias[nodo.Key] = int.MaxValue;
+        }
+
+        distancias[origen] = 0;
+        colaPrioridad.Add(new Tuple<int, string>(0, origen));
+
+        while (colaPrioridad.Count > 0)
+        {
+            var actual = colaPrioridad.Min.Item2;
+            colaPrioridad.Remove(colaPrioridad.Min);
+
+            if (!visitados.Add(actual))
+                continue;
+
+            foreach (var vecino in adjacencias[actual])
+            {
+                int nuevaDistancia = distancias[actual] + vecino.Value;
+                if (nuevaDistancia < distancias[vecino.Key])
+                {
+                    colaPrioridad.Remove(new Tuple<int, string>(distancias[vecino.Key], vecino.Key));
+                    distancias[vecino.Key] = nuevaDistancia;
+                    colaPrioridad.Add(new Tuple<int, string>(nuevaDistancia, vecino.Key));
+                }
+            }
+        }
+
+        return distancias;
+    }
+}
